@@ -18,17 +18,17 @@ class RoomRepoImp() : RoomRepo {
 
     private val socketManager = SocketManager()
 
-    override suspend fun joinRoom(roomId: String, onResult: (Boolean) -> Unit) {
+    override suspend fun joinRoom(roomId: String, userId: String, onResult: (Boolean) -> Unit) {
 
         if (!socketManager.isConnected()) {
             socketManager.connect() {
-                socketManager.joinRoom(roomId) { isSuccess, msg ->
+                socketManager.joinRoom(roomId, userId) { isSuccess, msg ->
                     println("Is Success : $isSuccess")
                     onResult(isSuccess)
                 }
             }
         } else {
-            socketManager.joinRoom(roomId) { isSuccess, msg ->
+            socketManager.joinRoom(roomId, userId) { isSuccess, msg ->
                 onResult(isSuccess)
             }
         }
@@ -77,4 +77,7 @@ class RoomRepoImp() : RoomRepo {
         }
 
     }
+
+
+
 }

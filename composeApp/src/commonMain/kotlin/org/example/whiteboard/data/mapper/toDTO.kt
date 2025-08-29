@@ -35,12 +35,10 @@ fun DrawnPathDTO.toDrawnPath(): DrawnPath {
         strokeWidth = strokeWidth,
         opacity = opacity,
         strokeColor = Color(strokeColor),
-        fillColor = Color(fillColor),
+        fillColor = fillColor?.let { Color(it) } ?: Color.Transparent,
         whiteboardId = whiteboardId
     )
 }
-
-
 
 
 private fun serializePath(path: Path): String {

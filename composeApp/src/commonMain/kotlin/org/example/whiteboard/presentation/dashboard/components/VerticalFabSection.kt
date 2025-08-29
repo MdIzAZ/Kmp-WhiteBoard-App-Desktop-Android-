@@ -30,15 +30,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
-import com.sun.org.apache.xalan.internal.lib.ExsltStrings.padding
 import org.jetbrains.compose.resources.painterResource
 import whiteboard.composeapp.generated.resources.Res
 import whiteboard.composeapp.generated.resources.ic_create_room
 import whiteboard.composeapp.generated.resources.ic_join
-import whiteboard.composeapp.generated.resources.ic_line_dotted
 import whiteboard.composeapp.generated.resources.ic_person
-import whiteboard.composeapp.generated.resources.ic_redo
-import whiteboard.composeapp.generated.resources.ic_undo
 
 @Composable
 fun VerticalFabSection(

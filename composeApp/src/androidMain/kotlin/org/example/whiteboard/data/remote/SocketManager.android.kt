@@ -3,7 +3,6 @@ package org.example.whiteboard.data.remote
 import android.util.Log
 import io.socket.client.Ack
 import io.socket.client.IO
-import io.socket.client.Manager
 import io.socket.client.Socket
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -20,8 +19,6 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.longOrNull
-import org.example.whiteboard.RoomId.roomId
-import org.json.JSONObject
 
 actual class SocketManager actual constructor() {
 
@@ -46,9 +43,9 @@ actual class SocketManager actual constructor() {
         }
     }
 
-    actual fun joinRoom(roomId: String, onResult: (Boolean, String) -> Unit) {
+    actual fun joinRoom(roomId: String, userId: String, onResult: (Boolean, String) -> Unit) {
         try {
-            socket.emit("join-room", roomId, Ack { args ->
+            socket.emit("join-room", roomId,userId,Ack { args ->
                 if (args.isNotEmpty()) {
                     val response = args[0].toString()
                     if (response == "joined") {

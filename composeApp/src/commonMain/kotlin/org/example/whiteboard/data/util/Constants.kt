@@ -12,6 +12,7 @@ object Constants {
     const val PREFERRED_STROKE_COLOR_KEY = "preferred_stroke_color_key"
     const val PREFERRED_FILL_COLOR_KEY = "preferred_fill_color_key"
     const val PREFERRED_CANVAS_COLOR_KEY = "preferred_canvas_color_key"
-    const val AUTH_TOKEN_KEY = "auth_token_key"
+    const val ACCESS_TOKEN_KEY = "access_token_key"
+    const val REFRESH_TOKEN_KEY = "refresh_token_key"
 
 }

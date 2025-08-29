@@ -11,7 +11,8 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
-    
+    alias(libs.plugins.composeHotReload)
+
 }
 
 kotlin {
@@ -25,16 +26,10 @@ kotlin {
     jvm("desktop")
 
     sourceSets {
-        val commonMain by getting
-        val androidMain by getting
+//        val commonMain by getting
+//        val androidMain by getting
         val desktopMain by getting
 
-//        val jvmMain by creating {
-//            dependsOn(commonMain)
-//        }
-//
-//        androidMain.dependsOn(jvmMain)
-//        desktopMain.dependsOn(jvmMain)
 
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -72,24 +67,26 @@ kotlin {
             implementation(libs.compose.colorpicker)
 
             // Icon Pack
-            //implementation("androidx.compose.material:material-icons-extended:1.7.0")
+//            implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
             //Ktor
             implementation(libs.bundles.ktor.common)
 
-            //socket-io
-            implementation("io.socket:socket.io-client:2.1.0") {}
+            implementation(libs.androidx.material.icons)
+
 
         }
 
-//        jvmMain.dependencies {
-//            implementation("io.socket:socket.io-client:2.1.0") {}
-//        }
+        jvmMain.dependencies {
+            implementation("io.socket:socket.io-client:2.1.0") {}
+        }
 
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
+
+            implementation("io.socket:socket.io-client:2.1.0")
         }
 
 
@@ -98,6 +95,8 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
 //            implementation("io.ktor:ktor-client-cio:2.3.5")
+
+            implementation("io.socket:socket.io-client:2.1.0")
         }
     }
 }
@@ -165,5 +164,4 @@ dependencies {
 room {
     schemaDirectory("$projectDir/schemas")
 }
-
 

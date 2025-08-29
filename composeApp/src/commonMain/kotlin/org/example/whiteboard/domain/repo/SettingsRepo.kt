@@ -19,8 +19,13 @@ interface SettingsRepo {
 
     fun getPreferredFillColors(): Flow<List<Color>>
 
-    suspend fun saveAuthToken(token: String)
+    suspend fun saveAccessToken(token: String)
 
-    fun getAuthToken(): Flow<String>
+    fun getAccessToken(): Flow<String>
+
+    suspend fun saveRefreshToken(token: String)
+
+    fun getRefreshToken(): Flow<String>
+
 
 }

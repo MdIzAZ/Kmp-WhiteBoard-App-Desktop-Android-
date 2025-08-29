@@ -1,18 +1,25 @@
 package org.example.whiteboard.presentation.authentication
 
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import org.example.whiteboard.data.remote.dto.AuthRequest
+import org.example.whiteboard.domain.model.Whiteboard
 import org.example.whiteboard.domain.repo.AuthRepo
 import org.example.whiteboard.domain.repo.SettingsRepo
+import org.example.whiteboard.domain.repo.WhiteboardRepo
 
 class AuthViewModel(
     private val authRepo: AuthRepo,
-    private val settingsRepo: SettingsRepo
+    private val settingsRepo: SettingsRepo,
+    private val whiteboardRepo: WhiteboardRepo,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthScreenState())
@@ -57,6 +64,26 @@ class AuthViewModel(
                 val res = authRepo.login(authRequest)
                 println(res)
                 saveAuthToken(res?.token)
+
+
+                val date = Clock.System.todayIn(TimeZone.currentSystemDefault())
+
+
+                val fetchedWhiteboards = res?.user?.roomIds?.map {
+                    Whiteboard(
+                        id = null,
+                        roomId = it,
+                        name = "Whiteboard $it",
+                        lastEdited = date,
+                        canvasColor = Color.White
+                    )
+                } ?: emptyList()
+
+                whiteboardRepo.insertWhiteboards(fetchedWhiteboards)
+
+
+
+
                 _state.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 println(e)
@@ -77,8 +104,27 @@ class AuthViewModel(
             try {
                 _state.update { it.copy(isLoading = true) }
                 val res = authRepo.register(authRequest)
+
                 println(res)
                 saveAuthToken(res?.token)
+
+
+
+                val date = Clock.System.todayIn(TimeZone.currentSystemDefault())
+
+                val fetchedWhiteboards = res?.user?.roomIds?.map {
+                    Whiteboard(
+                        id = null,
+                        roomId = it,
+                        name = "Whiteboard $it",
+                        lastEdited = date,
+                        canvasColor = Color.White
+                    )
+                } ?: emptyList()
+
+                whiteboardRepo.insertWhiteboards(fetchedWhiteboards)
+
+
                 _state.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 println(e)
@@ -92,7 +138,7 @@ class AuthViewModel(
     private fun saveAuthToken(token: String?) {
         viewModelScope.launch {
             try {
-                settingsRepo.saveAuthToken(token ?: "")
+                settingsRepo.saveAccessToken(token ?: "")
             } catch (e: Exception) {
                 println(e)
             }
@@ -100,4 +146,21 @@ class AuthViewModel(
 
     }
 
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

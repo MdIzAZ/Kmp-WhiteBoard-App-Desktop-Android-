@@ -12,24 +12,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.DialogProperties
 
 @Composable
-fun JoinRoomDialog(
+fun InputDialog(
+    title: String,
+    label: String,
+    confirmBtnTxt: String = "Confirm",
+    dismissBtnTxt: String = "Dismiss",
     onDismiss: () -> Unit,
-    onJoin: (roomId: String) -> Unit
+    onConfirm: (roomId: String) -> Unit
 ) {
 
-    var roomId by remember { mutableStateOf("") }
+    var txtFieldValue by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
-                enabled = roomId.isNotBlank(),
+                enabled = txtFieldValue.isNotBlank(),
                 onClick = {
-                    onJoin(roomId)
+                    onConfirm(txtFieldValue)
                     onDismiss()
                 },
                 content = {
-                    Text("Join")
+                    Text(confirmBtnTxt)
                 }
             )
 
@@ -38,18 +42,18 @@ fun JoinRoomDialog(
             TextButton(
                 onClick = onDismiss,
                 content = {
-                    Text("Dismiss")
+                    Text(dismissBtnTxt)
                 }
             )
         },
         title = {
-            Text(text = "Join Whiteboard")
+            Text(text = title)
         },
         text = {
             OutlinedTextField(
-                value = roomId,
-                onValueChange = { roomId = it },
-                label = { Text("Enter Room ID") },
+                value = txtFieldValue,
+                onValueChange = { txtFieldValue = it },
+                label = { Text(label) },
                 singleLine = true
             )
         },

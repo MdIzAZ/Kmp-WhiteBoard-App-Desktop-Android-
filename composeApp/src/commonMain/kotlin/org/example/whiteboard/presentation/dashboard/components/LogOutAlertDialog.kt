@@ -1,25 +1,16 @@
 package org.example.whiteboard.presentation.dashboard.components
 
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.DialogProperties
-import kotlinx.coroutines.NonCancellable.onJoin
-import kotlinx.serialization.json.JsonNull.content
-import org.example.whiteboard.RoomId.roomId
 
 @Composable
 fun LogOutAlertDialog(
     onDismiss: () -> Unit,
     onLogOut: () -> Unit
 ) {
-
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -41,7 +32,7 @@ fun LogOutAlertDialog(
             )
         },
         title = {
-            Text(text = "Are you sure? ")
+            Text(text = "Are you sure? \nAll Local Whiteboards will be erased! ")
         },
         properties = DialogProperties(dismissOnClickOutside = true)
     )

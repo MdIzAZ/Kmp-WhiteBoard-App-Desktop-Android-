@@ -6,13 +6,15 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,30 +22,47 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.example.whiteboard.domain.model.DrawnPath
@@ -58,13 +77,18 @@ import org.example.whiteboard.presentation.whiteboard.component.DrawingToolsCard
 import org.example.whiteboard.presentation.whiteboard.component.DrawingToolsCardVertical
 import org.example.whiteboard.presentation.whiteboard.component.TopBarHorizontal
 import org.example.whiteboard.presentation.whiteboard.component.TopBarVertical
+import javax.swing.Spring.scale
+import kotlin.contracts.Returns
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 @Composable
 fun WhiteBoardScreen(
     modifier: Modifier = Modifier,
     state: WhiteBoardState,
     onEvent: (WhiteBoardEvent) -> Unit,
-    onHomeIconClick: () -> Unit
+    onHomeIconClick: () -> Unit,
+    onClearToast:()->Unit
 ) {
 
     val screenSize = rememberScreenSizeInfo()
@@ -73,12 +97,22 @@ fun WhiteBoardScreen(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     var isCommandPaletteOpen by remember { mutableStateOf(value = false) }
 
-    var scale by remember { mutableStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
 
-    val zoomState = rememberTransformableState { zoomChange, panChange, _ ->
-        scale = (scale * zoomChange).coerceIn(0.5f, 15f)
-        offset += panChange
+    var sliderOffsetY by rememberSaveable { mutableFloatStateOf(0f) }
+    var sliderOffsetX by rememberSaveable { mutableFloatStateOf(0f) }
+
+    var scale by rememberSaveable { mutableFloatStateOf(1f) }
+
+    val trackHeight = screenSize.height.value * scale
+    val trackWidth = screenSize.width.value * scale
+
+    val density = LocalDensity.current
+    val verticalRatio = with(density) {
+        800.dp.toPx() / trackHeight
+    }
+
+    val horizontalRatio = with(density) {
+        800.dp.toPx() / trackWidth
     }
 
     ColorSelectionDialog(
@@ -89,9 +123,26 @@ fun WhiteBoardScreen(
         onDismissRequest = { onEvent(WhiteBoardEvent.OnColorSelectionDialogDismiss) }
     )
 
+    val snackBarHostState = remember { SnackbarHostState() }
 
-    Scaffold {ip->
-        Box(modifier = modifier.fillMaxSize().padding(ip)) {
+
+    LaunchedEffect(state.toastMessage) {
+        state.toastMessage?.let { message ->
+            snackBarHostState.showSnackbar(message)
+            onClearToast()
+        }
+    }
+
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackBarHostState) }
+    ) { ip ->
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(ip)
+        ) {
+
 
             when (screenType) {
 
@@ -132,11 +183,19 @@ fun WhiteBoardScreen(
                         },
                     ) {
                         DrawingCanvas(
-                            modifier = Modifier.fillMaxSize().transformable(zoomState),
+                            modifier = Modifier,
                             state = state,
                             onEvent = onEvent,
                             scale = scale,
-                            offset = offset
+                            offset = Offset(
+                                sliderOffsetX * horizontalRatio,
+                                sliderOffsetY * verticalRatio
+                            ),
+                            showSnackBar = {
+                                scope.launch {
+                                    snackBarHostState.showSnackbar(it)
+                                }
+                            }
                         )
 
                         TopBarHorizontal(
@@ -144,17 +203,19 @@ fun WhiteBoardScreen(
                                 .align(Alignment.TopCenter)
                                 .padding(20.dp),
                             onHomeIconClick = onHomeIconClick,
-                            onUndoClick = {
-
-                            },
-                            onRedoClick = {
-
-                            },
+                            onUndoClick = {},
+                            onRedoClick = {},
                             onMenuClick = {
                                 scope.launch {
                                     if (drawerState.isOpen) drawerState.close()
                                     else drawerState.open()
                                 }
+                            },
+                            onZoomInClick = {
+                                scale = (scale + 0.2f).coerceAtMost(5f)
+                            },
+                            onZoomOutClick = {
+                                scale = (scale - 0.2f).coerceAtLeast(0.2f)
                             }
                         )
 
@@ -183,11 +244,16 @@ fun WhiteBoardScreen(
 
                 else -> {
                     DrawingCanvas(
-                        modifier = Modifier.fillMaxSize().transformable(zoomState),
+                        modifier = Modifier.fillMaxSize(),
                         state = state,
                         onEvent = onEvent,
                         scale = scale,
-                        offset = offset
+                        offset = Offset(sliderOffsetX, sliderOffsetY),
+                        showSnackBar = {
+                            scope.launch {
+                                snackBarHostState.showSnackbar(it)
+                            }
+                        }
                     )
                     Row(
                         modifier = Modifier
@@ -199,7 +265,13 @@ fun WhiteBoardScreen(
                             onHomeIconClick = onHomeIconClick,
                             onUndoClick = {},
                             onRedoClick = {},
-                            onMenuClick = { isCommandPaletteOpen = true }
+                            onMenuClick = { isCommandPaletteOpen = true },
+                            onZoomInClick = {
+                                scale = (scale + 0.2f).coerceAtMost(5f)
+                            },
+                            onZoomOutClick = {
+                                scale = (scale - 0.2f).coerceAtLeast(0.2f)
+                            }
                         )
 
                         Spacer(modifier = Modifier.width(10.dp))
@@ -274,11 +346,84 @@ fun WhiteBoardScreen(
                 }
             }
 
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 64.dp)
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(40.dp)
+            ) {
+
+                Box(
+                    modifier = Modifier
+                        .offset {
+                            IntOffset(0, sliderOffsetY.roundToInt())
+                        }
+                        .width(32.dp)
+                        .height(60.dp)
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    sliderOffsetY += min(dragAmount.y, trackHeight)
+                                }
+                            )
+                        }
+                ) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Spacer(Modifier.height(8.dp))
+
+                        for (i in 0..6) {
+                            HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = 2.dp)
+                            Spacer(Modifier.height(8.dp))
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(40.dp)
+            ) {
+
+                Box(
+                    modifier = Modifier
+                        .offset {
+                            IntOffset(sliderOffsetX.roundToInt(), 0f.roundToInt())
+                        }
+                        .width(60.dp)
+                        .height(32.dp)
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    sliderOffsetX += min(dragAmount.x, trackWidth)
+                                }
+                            )
+                        }
+                ) {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        Spacer(Modifier.width(8.dp))
+
+                        for (i in 0..4) {
+                            VerticalDivider(modifier = Modifier.fillMaxHeight(), thickness = 2.dp)
+                            Spacer(Modifier.width(8.dp))
+                        }
+
+                        Spacer(Modifier.width(8.dp))
+                    }
+                }
+            }
+
 
         }
     }
-
-
 
 
 }
@@ -289,54 +434,59 @@ fun DrawingCanvas(
     modifier: Modifier = Modifier,
     state: WhiteBoardState,
     onEvent: (WhiteBoardEvent) -> Unit,
+    showSnackBar: (String) -> Unit,
     scale: Float,
     offset: Offset
 ) {
-    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-    val inverseScale = 1f / scale.coerceAtLeast(0.01f) // Avoid division by zero (still needed for potential future use)
-    val canvasSizeModifier = Modifier
-        .fillMaxSize()
-        .background(state.canvasColor)
-        .onSizeChanged { size ->
-            canvasSize = size
-        }
-    // Removed the .then(if (scale < 1f) Modifier.size(...) ) to fix pivot and input issues
+
+    val textMeasurer = rememberTextMeasurer()
+
 
     Canvas(
         modifier = modifier
-            .then(canvasSizeModifier)
-            .pointerInput(Unit) {
+            .size(800.dp)
+            .background(state.canvasColor)
+            .pointerInput(offset, scale) {
                 detectDragGestures(
-                    onDragStart = {
-                        val adjusted = (it - offset) / scale
-                        onEvent(WhiteBoardEvent.StartDrawing(adjusted))
+                    onDragStart = { pos ->
+                        if (scale != 1f) {
+                            showSnackBar("Please reset zoom level to 100% before drawing")
+                            return@detectDragGestures
+                        } else {
+                            val world = (pos + offset)
+                            onEvent(WhiteBoardEvent.StartDrawing(world))
+                        }
                     },
                     onDrag = { change, _ ->
-                        val adjusted = (change.position - offset) / scale
-                        onEvent(WhiteBoardEvent.Draw(adjusted))
+                        val world = (change.position + offset)
+                        if (scale == 1f) {
+                            onEvent(WhiteBoardEvent.Draw(world))
+                        }
                     },
                     onDragEnd = {
-                        onEvent(WhiteBoardEvent.EndDrawing)
+                        if (scale == 1f) {
+                            onEvent(WhiteBoardEvent.EndDrawing)
+                        }
                     }
                 )
             }
     ) {
-        val canvasWidth = size.width
-        val canvasHeight = size.height
-
         withTransform({
-            translate(offset.x, offset.y)
-            scale(scale, scale, pivot = Offset(canvasWidth / 2f, canvasHeight / 2f))
+            scale(scale)
+            translate(-offset.x, -offset.y)
         }) {
-            state.pathList.forEach {
-                drawCustomPath(it)
-            }
-            state.currentPath?.let {
-                drawCustomPath(it)
-            }
+
+            drawText(
+                text = "Hello Canvas",
+                textMeasurer = textMeasurer
+            )
+
+            state.pathList.forEach { drawCustomPath(it) }
+            state.currentPath?.let { drawCustomPath(it) }
         }
     }
 
+    // Laser path animation same as before
     AnimateLaserPath(
         laserPath = state.laserPenPath,
         onAnimationComplete = { onEvent(WhiteBoardEvent.OnLaserPathAnimationComplete) }
@@ -355,11 +505,13 @@ private fun DrawScope.drawCustomPath(path: DrawnPath) {
         }
 
         else -> {
-            drawPath(
-                path = path.path,
-                color = path.fillColor.copy(alpha = path.opacity / 100),
-                style = Fill,
-            )
+            path.fillColor?.let {
+                drawPath(
+                    path = path.path,
+                    color = path.fillColor.copy(alpha = path.opacity / 100),
+                    style = Fill,
+                )
+            }
         }
     }
 }
@@ -407,6 +559,10 @@ fun AnimateLaserPath(
     }
 }
 
+
+private fun screenToCanvas(screenPos: Offset, offset: Offset, scale: Float): Offset {
+    return (screenPos - offset) / scale
+}
 
 
 

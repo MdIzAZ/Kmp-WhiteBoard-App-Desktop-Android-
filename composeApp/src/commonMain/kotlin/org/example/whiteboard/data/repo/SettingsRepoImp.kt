@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.example.whiteboard.data.util.Constants
 import org.example.whiteboard.domain.model.ColorPaletteType
@@ -28,8 +27,10 @@ class SettingsRepoImp(
             stringPreferencesKey(Constants.PREFERRED_FILL_COLOR_KEY)
         private val PREFERRED_CANVAS_COLOR_KEY =
             stringPreferencesKey(Constants.PREFERRED_CANVAS_COLOR_KEY)
-        private val AUTH_TOKEN_KEY =
-            stringPreferencesKey(Constants.AUTH_TOKEN_KEY)
+        private val ACCESS_TOKEN_KEY =
+            stringPreferencesKey(Constants.ACCESS_TOKEN_KEY)
+        private val REFRESH_TOKEN_KEY =
+            stringPreferencesKey(Constants.REFRESH_TOKEN_KEY)
     }
 
     override suspend fun saveColorScheme(colorScheme: ColorScheme) {
@@ -88,15 +89,27 @@ class SettingsRepoImp(
         }
     }
 
-    override suspend fun saveAuthToken(token: String) {
+    override suspend fun saveAccessToken(token: String) {
         pref.edit {
-            it[AUTH_TOKEN_KEY] = token
+            it[ACCESS_TOKEN_KEY] = token
         }
     }
 
-    override fun getAuthToken(): Flow<String> {
+    override fun getAccessToken(): Flow<String> {
         return pref.data.map {
-            it[AUTH_TOKEN_KEY] ?: ""
+            it[ACCESS_TOKEN_KEY] ?: ""
+        }
+    }
+
+    override suspend fun saveRefreshToken(token: String) {
+        pref.edit {
+            it[REFRESH_TOKEN_KEY] = token
+        }
+    }
+
+    override fun getRefreshToken(): Flow<String> {
+        return pref.data.map {
+            it[REFRESH_TOKEN_KEY] ?: ""
         }
     }
 

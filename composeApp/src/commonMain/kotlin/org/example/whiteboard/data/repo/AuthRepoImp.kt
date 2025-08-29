@@ -1,6 +1,6 @@
 package org.example.whiteboard.data.repo
 
-import org.example.whiteboard.data.remote.AuthenticationAPI
+import org.example.whiteboard.data.remote.apis.AuthenticationAPI
 import org.example.whiteboard.data.remote.dto.AuthRequest
 import org.example.whiteboard.data.remote.dto.AuthResponse
 import org.example.whiteboard.domain.repo.AuthRepo

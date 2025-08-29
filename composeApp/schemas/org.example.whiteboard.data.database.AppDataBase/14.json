@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 14,
-    "identityHash": "4de805399cd8880d5d2152d82f6e774c",
+    "identityHash": "84c81d063ba752c5fb04d35bdfc27fd0",
     "entities": [
       {
         "tableName": "path_entity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `pathId` TEXT, `drawingTool` TEXT NOT NULL, `path` TEXT NOT NULL, `strokeWidth` REAL NOT NULL, `opacity` REAL NOT NULL, `strokeColor` INTEGER NOT NULL, `fillColor` INTEGER NOT NULL, `whiteboardId` INTEGER NOT NULL, `roomId` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `pathId` TEXT, `drawingTool` TEXT NOT NULL, `path` TEXT NOT NULL, `strokeWidth` REAL NOT NULL, `opacity` REAL NOT NULL, `strokeColor` INTEGER NOT NULL, `fillColor` INTEGER, `whiteboardId` INTEGER NOT NULL, `roomId` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -51,8 +51,7 @@
           {
             "fieldPath": "fillColor",
             "columnName": "fillColor",
-            "affinity": "INTEGER",
-            "notNull": true
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "whiteboardId",
@@ -116,7 +115,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4de805399cd8880d5d2152d82f6e774c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '84c81d063ba752c5fb04d35bdfc27fd0')"
     ]
   }
 }

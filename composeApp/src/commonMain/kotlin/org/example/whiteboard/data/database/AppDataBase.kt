@@ -14,7 +14,7 @@ import org.example.whiteboard.data.database.entity.WhiteboardEntity
 
 @Database(
     entities = [PathEntity::class, WhiteboardEntity::class],
-    version = 14
+    version = 16
 )
 @ConstructedBy(AppDataBaseConstructor::class)
 @TypeConverters(PathConverter::class, LocalDateConverter::class)

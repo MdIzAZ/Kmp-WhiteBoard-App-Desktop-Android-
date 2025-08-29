@@ -2,15 +2,18 @@ package org.example.whiteboard.di
 
 import org.example.whiteboard.data.database.AppDataBase
 import org.example.whiteboard.data.database.getRoomDatabase
-import org.example.whiteboard.data.remote.AuthenticationAPI
+import org.example.whiteboard.data.remote.apis.AuthenticationAPI
+import org.example.whiteboard.data.remote.apis.RemoteDbApi
 import org.example.whiteboard.data.remote.createHttpClient
 import org.example.whiteboard.data.repo.AuthRepoImp
 import org.example.whiteboard.data.repo.PathRepoImp
+import org.example.whiteboard.data.repo.RemoteDbRepoImp
 import org.example.whiteboard.data.repo.RoomRepoImp
 import org.example.whiteboard.data.repo.SettingsRepoImp
 import org.example.whiteboard.data.repo.WhiteboardRepoImp
 import org.example.whiteboard.domain.repo.AuthRepo
 import org.example.whiteboard.domain.repo.PathRepo
+import org.example.whiteboard.domain.repo.RemoteDbRepo
 import org.example.whiteboard.domain.repo.RoomRepo
 import org.example.whiteboard.domain.repo.SettingsRepo
 import org.example.whiteboard.domain.repo.WhiteboardRepo
@@ -39,6 +42,11 @@ val sharedModule = module {
         AuthenticationAPI(get())
     }
 
+    single {
+        RemoteDbApi(get(), get())
+
+    }
+
     //dao
     single { get<AppDataBase>().pathDao() }
 
@@ -55,5 +63,7 @@ val sharedModule = module {
     singleOf(::WhiteboardRepoImp).bind<WhiteboardRepo>()
     singleOf(::RoomRepoImp).bind<RoomRepo>()
     singleOf(::AuthRepoImp).bind<AuthRepo>()
+    singleOf(::RemoteDbRepoImp).bind<RemoteDbRepo>()
+
 
 }

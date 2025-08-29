@@ -2,6 +2,7 @@ package org.example.whiteboard.data.remote
 
 import io.socket.client.Ack
 import io.socket.client.IO
+import io.socket.client.IO.socket
 import io.socket.client.Socket
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -21,7 +22,7 @@ import kotlinx.serialization.json.longOrNull
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 actual class SocketManager actual constructor() {
 
-//    private val socket: Socket = IO.socket("ws://localhost:8000/")
+//        private val socket: Socket = IO.socket("ws://localhost:8000/")
     private val socket: Socket = IO.socket("wss://whiteboard-backend-vcgb.onrender.com")
 
     actual fun connect(onSuccess: () -> Unit) {
@@ -42,9 +43,9 @@ actual class SocketManager actual constructor() {
     }
 
 
-    actual fun joinRoom(roomId: String, onResult: (Boolean, String) -> Unit) {
+    actual fun joinRoom(roomId: String, userId: String, onResult: (Boolean, String) -> Unit) {
         try {
-            socket.emit("join-room", roomId, Ack { args ->
+            socket.emit("join-room", roomId, userId, Ack { args ->
                 if (args.isNotEmpty()) {
                     val response = args[0].toString()
                     if (response == "joined") {
@@ -57,6 +58,8 @@ actual class SocketManager actual constructor() {
                 }
 
             })
+
+            socket.off("join-room")
         } catch (e: Exception) {
             e.printStackTrace()
         }

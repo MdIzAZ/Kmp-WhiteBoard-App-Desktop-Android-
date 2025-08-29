@@ -22,13 +22,31 @@ class WhiteboardRepoImp(
         }
     }
 
+    override suspend fun insertWhiteboards(whiteboards: List<Whiteboard>): List<Long> {
+        val entityList = whiteboards.map { it.toWhiteboardEntity() }
+        return dao.insertWhiteboards(entityList)
+    }
+
     override suspend fun getWhiteboardById(id: Long): Whiteboard? {
         return dao.getWhiteboardById(id)?.toWhiteboard()
     }
+
+    override suspend fun renameWhiteboard(id: Long, newName: String) {
+        dao.renameWhiteboard(id, newName)
+    }
+
+    override suspend fun deleteWhiteboard(id: Long) {
+        dao.deleteWhiteboard(id)
+    }
+
 
     override fun getAllWhiteboards(): Flow<List<Whiteboard>> {
         return dao.getAllWhiteboards().map {
             it.toWhiteboardList()
         }
+    }
+
+    override suspend fun deleteAllWhiteboards() {
+        dao.deleteAllWhiteboards()
     }
 }

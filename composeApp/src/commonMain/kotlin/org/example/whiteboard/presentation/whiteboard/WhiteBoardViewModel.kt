@@ -9,10 +9,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import androidx.room.Room
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
@@ -24,24 +22,26 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import org.example.whiteboard.Information
 import org.example.whiteboard.domain.model.ColorPaletteType
 import org.example.whiteboard.domain.model.DrawingTool
 import org.example.whiteboard.domain.model.DrawnPath
 import org.example.whiteboard.domain.model.Mode
 import org.example.whiteboard.domain.model.Whiteboard
 import org.example.whiteboard.domain.repo.PathRepo
+import org.example.whiteboard.domain.repo.RemoteDbRepo
 import org.example.whiteboard.domain.repo.RoomRepo
 import org.example.whiteboard.domain.repo.SettingsRepo
 import org.example.whiteboard.domain.repo.WhiteboardRepo
 import org.example.whiteboard.presentation.navigation.Routes
 import java.util.UUID
-import kotlin.uuid.Uuid
 
 class WhiteBoardViewModel(
     private val pathRepo: PathRepo,
     private val whiteboardRepo: WhiteboardRepo,
     private val roomRepo: RoomRepo,
     private val settingsRepo: SettingsRepo,
+    private val remoteDbRepo: RemoteDbRepo,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -73,23 +73,28 @@ class WhiteBoardViewModel(
         WhiteBoardState()
     )
 
+
     init {
+
         whiteboardId?.let {
             getWhiteboardById(it)
         }
         observePaths()
+
 
         if (roomId != null) {
             _state.update { it.copy(mode = Mode.Online(roomId), roomId = roomId) }
             println("Mode Online")
             if (whiteboardId != null) { // Clicked on Already Created Shared Whiteboard, connect to room.
                 joinRoom(roomId)
+                fetchAllPathsFromServerAndSaveToDb(whiteboardId)
             }
             observeIncomingPaths()
         } else {
             println("Mode Offline")
             _state.update { it.copy(mode = Mode.Offline) }
         }
+
 
     }
 
@@ -98,7 +103,7 @@ class WhiteBoardViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
-                roomRepo.joinRoom(roomId) joinCallBack@{ isSuccess ->
+                roomRepo.joinRoom(roomId, Information.userId) joinCallBack@{ isSuccess ->
                     if (!isSuccess) {
                         _state.update { it.copy(isLoading = false) }
                         return@joinCallBack
@@ -310,11 +315,13 @@ class WhiteBoardViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observePaths() {
         viewModelScope.launch {
+            println("Updated id: " + updatedWhiteboardId.value)
             updatedWhiteboardId
                 .flatMapLatest { id ->
                     pathRepo.getPathsForWhiteboard(id ?: -1)
                 }
                 .collectLatest { paths ->
+                    println("Paths Collected: ${paths}")
                     _state.update { it.copy(pathList = paths) }
 
                 }
@@ -561,6 +568,35 @@ class WhiteBoardViewModel(
                 }
             }
         }
+    }
+
+    private fun fetchAllPathsFromServerAndSaveToDb(whiteboardId: Long) {
+        viewModelScope.launch {
+            try {
+                val paths = remoteDbRepo.fetchPathsForWhiteboard(whiteboardId, roomId!!) {
+                    if (!it) {
+                        showToast("Failed to fetch paths from server")
+                        return@fetchPathsForWhiteboard
+                    }
+                }
+                if (paths.isNotEmpty()) {
+                    pathRepo.replacePaths(roomId, paths)
+                }
+            } catch (e: Exception) {
+                showToast("Failed to fetch paths from server")
+                println(e)
+            }
+        }
+
+    }
+
+
+    fun showToast(message: String) {
+        _state.update { it.copy(toastMessage = message) }
+    }
+
+    fun clearToast() {
+        _state.update { it.copy(toastMessage = null) }
     }
 
 

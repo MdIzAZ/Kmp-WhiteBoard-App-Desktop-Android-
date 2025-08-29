@@ -1,4 +1,4 @@
-package org.example.whiteboard.data.remote
+package org.example.whiteboard.data.remote.apis
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -8,6 +8,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.SerializationException
+import org.example.whiteboard.data.remote.apis.RemoteDbApi.Companion.BASE_URL
 import org.example.whiteboard.data.remote.dto.AuthRequest
 import org.example.whiteboard.data.remote.dto.AuthResponse
 

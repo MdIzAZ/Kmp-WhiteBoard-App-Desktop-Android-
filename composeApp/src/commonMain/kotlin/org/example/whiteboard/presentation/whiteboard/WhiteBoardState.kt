@@ -31,5 +31,8 @@ data class WhiteBoardState(
     val selectedColorPaletteType: ColorPaletteType = ColorPaletteType.STROKE,
     val preferredCanvasColors: List<Color> = defaultCanvasColors,
     val preferredStrokeColors: List<Color> = defaultDrawingColors,
-    val preferredFillColors: List<Color> = defaultDrawingColors
+    val preferredFillColors: List<Color> = defaultDrawingColors,
+
+    val toastMessage: String? = null,
+
 )

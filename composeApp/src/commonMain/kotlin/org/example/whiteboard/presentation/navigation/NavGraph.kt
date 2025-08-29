@@ -1,9 +1,6 @@
 package org.example.whiteboard.presentation.navigation
 
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -79,7 +76,10 @@ fun NavGraph(
                             Routes.WhiteboardScreen(whiteboardId = null, roomId = roomId)
                         )
                     }
-                }
+                },
+                onRenameClick = viewModel::renameWhiteboard,
+                onDeleteClick = viewModel::deleteWhiteboard,
+                onClearToast = viewModel::clearToast
             )
         }
 
@@ -93,7 +93,8 @@ fun NavGraph(
                 onEvent = viewModel::onEvent,
                 onHomeIconClick = {
                     viewModel.navigateBack { navController.navigateUp() }
-                }
+                },
+                onClearToast = viewModel::clearToast
             )
         }
 

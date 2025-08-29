@@ -60,7 +60,7 @@ fun WhiteboardItemCard(
         ) {
             Text(
                 modifier = Modifier.weight(1f).padding(8.dp),
-                text = whiteboard.name + "${whiteboard.id}",
+                text = whiteboard.name ,
                 maxLines = 2
             )
             Box {

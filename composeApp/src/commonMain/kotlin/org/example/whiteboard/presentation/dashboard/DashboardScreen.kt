@@ -1,5 +1,6 @@
 package org.example.whiteboard.presentation.dashboard
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,19 +9,28 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,8 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.whiteboard.domain.model.Whiteboard
-import org.example.whiteboard.presentation.dashboard.components.JoinRoomDialog
+import org.example.whiteboard.presentation.dashboard.components.InputDialog
 import org.example.whiteboard.presentation.dashboard.components.LogOutAlertDialog
 import org.example.whiteboard.presentation.dashboard.components.VerticalFabSection
 import org.example.whiteboard.presentation.dashboard.components.WhiteboardItemCard
@@ -48,10 +59,25 @@ fun DashboardScreen(
     onWhiteboardClick: (Long, String?) -> Unit,
     onJoinWhiteboardClick: (roomId: String) -> Unit,
     createSharedRoom: () -> Unit,
+    onRenameClick: (id: Long, newName: String) -> Unit,
+    onDeleteClick: (id:Long, roomId:String?) -> Unit,
+    onClearToast:()->Unit
 ) {
 
     var expanded by remember { mutableStateOf(false) }
+    var currentWhiteboardId by remember { mutableLongStateOf(-1L) }
+    var inputDialogCurrentType by remember { mutableStateOf<InputDialogCurrentType?>(null) }
+
     var shouldShowAlertDialog by remember { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.toastMessage) {
+        state.toastMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            onClearToast()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -59,6 +85,9 @@ fun DashboardScreen(
                 onSettingIconClick = onSettingIconClick,
                 onLogOutIconClick = { shouldShowAlertDialog = true }
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { ip ->
         Box(
@@ -87,8 +116,12 @@ fun DashboardScreen(
                                 roomId = whiteboard.roomId,
                                 canvasColor = whiteboard.canvasColor
                             ),
-                            onRenameClick = { },
-                            onDeleteClick = { }
+                            onRenameClick = {
+                                currentWhiteboardId = whiteboard.id!!
+                                inputDialogCurrentType = InputDialogCurrentType.RENAME_WHITEBOARD
+                                expanded = true
+                            },
+                            onDeleteClick = { onDeleteClick(whiteboard.id!!, whiteboard.roomId) }
                         )
                     }
 
@@ -96,11 +129,58 @@ fun DashboardScreen(
             }
 
             if (expanded) {
-                JoinRoomDialog(
-                    onJoin = { onJoinWhiteboardClick(it) },
-                    onDismiss = { expanded = false }
-                )
+                when (inputDialogCurrentType) {
+                    InputDialogCurrentType.JOIN_ROOM -> {
+                        InputDialog(
+                            title = "Join Whiteboard",
+                            label = "Enter Room ID",
+                            confirmBtnTxt = "Join Room",
+                            dismissBtnTxt = "Cancel",
+                            onConfirm = {
+                                onJoinWhiteboardClick(it)
+                                inputDialogCurrentType = null
+                                expanded = false
+                            },
+                            onDismiss = { expanded = false }
+                        )
+                    }
+
+                    InputDialogCurrentType.RENAME_WHITEBOARD -> {
+                        InputDialog(
+                            title = "Rename Whiteboard",
+                            label = "Enter New Name",
+                            confirmBtnTxt = "Rename",
+                            dismissBtnTxt = "Cancel",
+                            onConfirm = {
+                                onRenameClick(currentWhiteboardId, it)
+                                inputDialogCurrentType = null
+                                expanded = false
+                            },
+                            onDismiss = { expanded = false }
+                        )
+                    }
+
+                    null -> {}
+                }
+
             }
+
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(24.dp)
+                        )
+                        .wrapContentSize()
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.padding(24.dp).size(80.dp).align(Alignment.Center)
+                    )
+                }
+            }
+
 
             if (shouldShowAlertDialog) {
                 LogOutAlertDialog(
@@ -113,6 +193,7 @@ fun DashboardScreen(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
                 onJoinWhiteboard = {
                     expanded = true
+                    inputDialogCurrentType = InputDialogCurrentType.JOIN_ROOM
                 },
                 onCreateWhiteboard = { onCreateWhiteboardClick() },
                 createSharedRoom = { createSharedRoom() }
@@ -159,3 +240,10 @@ fun DashboardTopBar(
     )
 
 }
+
+
+enum class InputDialogCurrentType {
+    JOIN_ROOM, RENAME_WHITEBOARD
+}
+
+

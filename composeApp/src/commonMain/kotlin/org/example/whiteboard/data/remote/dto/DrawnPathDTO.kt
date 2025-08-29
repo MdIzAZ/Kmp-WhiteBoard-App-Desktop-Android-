@@ -11,6 +11,6 @@ data class DrawnPathDTO(
     val strokeWidth: Float,
     val opacity: Float,
     val strokeColor: Long,
-    val fillColor: Long,
+    val fillColor: Long?,
     val whiteboardId: Long
 )

@@ -33,7 +33,7 @@ class SettingsViewModel(
 
     }
 
-    val token = settingsRepo.getAuthToken()
+    val token = settingsRepo.getAccessToken()
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,

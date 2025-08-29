@@ -3,15 +3,15 @@ package org.example.whiteboard.presentation.setting_screen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -35,7 +35,7 @@ fun SettingScreen(
     onThemeSelected: (ColorScheme) -> Unit
 ) {
 
-    var isColorSchemeDialogOpened by rememberSaveable{ mutableStateOf(false) }
+    var isColorSchemeDialogOpened by rememberSaveable { mutableStateOf(false) }
 
     ColorSchemeDialog(
         modifier = Modifier,
@@ -45,23 +45,35 @@ fun SettingScreen(
         onThemeSelected = onThemeSelected
     )
 
-    Column(modifier = modifier.fillMaxSize()) {
-        SettingsTopBar(
-            onBack = onBack
-        )
-        ListItem(
-            modifier = Modifier.clickable { isColorSchemeDialogOpened = true },
-            headlineContent = { Text("Color Scheme") },
-            supportingContent = { Text(text = currentColorScheme.label) },
-            leadingContent = {
-                Icon(
-                    modifier = Modifier.size(25.dp),
-                    painter = painterResource(Res.drawable.ic_theme),
-                    contentDescription = "Color Scheme Settings"
-                )
-            }
-        )
+    Scaffold(
+        topBar = {
+            SettingsTopBar(
+                onBack = onBack
+            )
+        }
+    ) { ip ->
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(ip)
+        ) {
+
+            ListItem(
+                modifier = Modifier.clickable { isColorSchemeDialogOpened = true },
+                headlineContent = { Text("Color Scheme") },
+                supportingContent = { Text(text = currentColorScheme.label) },
+                leadingContent = {
+                    Icon(
+                        modifier = Modifier.size(25.dp),
+                        painter = painterResource(Res.drawable.ic_theme),
+                        contentDescription = "Color Scheme Settings"
+                    )
+                }
+            )
+        }
     }
+
+
 }
 
 
