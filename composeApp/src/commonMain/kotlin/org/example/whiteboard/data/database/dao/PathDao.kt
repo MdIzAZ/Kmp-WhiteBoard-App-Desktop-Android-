@@ -39,4 +39,7 @@ interface PathDao {
 
     @Query("DELETE FROM $PATH_TABLE_NAME")
     suspend fun deleteAllPaths()
+
+    @Query("DELETE FROM $PATH_TABLE_NAME WHERE pathId IN (:ids)")
+    suspend fun deleteListOfPaths(ids: List<String>)
 }

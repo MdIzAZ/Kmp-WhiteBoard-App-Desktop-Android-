@@ -1,7 +1,6 @@
 package org.example.whiteboard.data.remote
 
 import kotlinx.serialization.json.JsonObject
-import org.example.whiteboard.domain.model.DrawnPath
 
 expect class SocketManager() {
 
@@ -13,10 +12,14 @@ expect class SocketManager() {
 
     fun emitPath(data: JsonObject)
 
-    fun onDraw(onReceived: (String) -> Unit)
+    fun observeDrawings(onReceived: (String) -> Unit)
 
     fun disconnect()
 
     fun isConnected(): Boolean
+
+    fun erase(pathsIds: List<String>, roomId: String, onResult: (Boolean, String) -> Unit)
+
+    fun observeErase(onReceived: (ids: List<String>) -> Unit)
 
 }

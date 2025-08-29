@@ -8,7 +8,7 @@ data class PathResponse(
     val createdAt: String,
     val drawingTool: String,
     val fillColor: Int?,
-    val opacity: Int,
+    val opacity: Double,
     val pathId: String,
     val pathString: String,
     val strokeColor: Int,

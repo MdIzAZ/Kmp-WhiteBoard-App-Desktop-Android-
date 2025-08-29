@@ -25,6 +25,10 @@ class PathRepoImp(
         pathDao.deletePath(path.toPathEntity())
     }
 
+    override suspend fun deleteAListOfPaths(ids: List<String>) {
+        pathDao.deleteListOfPaths(ids)
+    }
+
     override fun getPathsForWhiteboard(whiteboardId: Long): Flow<List<DrawnPath>> {
         return pathDao.getPathsForWhiteboard(whiteboardId).map {
             it.toDrawnPathList()

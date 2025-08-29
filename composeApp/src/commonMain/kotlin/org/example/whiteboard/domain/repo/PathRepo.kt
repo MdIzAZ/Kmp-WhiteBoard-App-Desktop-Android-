@@ -11,6 +11,8 @@ interface PathRepo {
 
     suspend fun deletePath(path: DrawnPath)
 
+    suspend fun deleteAListOfPaths(ids: List<String>)
+
     fun getPathsForWhiteboard(whiteboardId: Long): Flow<List<DrawnPath>>
 
     suspend fun deletePathsOfWhiteboard(whiteboardId: Long)

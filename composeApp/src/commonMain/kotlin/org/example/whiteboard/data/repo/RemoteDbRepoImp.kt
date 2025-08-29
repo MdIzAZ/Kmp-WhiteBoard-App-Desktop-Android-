@@ -28,7 +28,6 @@ class RemoteDbRepoImp(
         roomId: String,
         onResult: (Boolean) -> Unit
     ): List<DrawnPath> {
-        println("Loacl Whiteboard Id: $whiteboardId")
         return remoteDbApi.fetchPathsForWhiteboard(roomId, onResult).paths.map {
             it.toDrawnPath(whiteboardId)
         }

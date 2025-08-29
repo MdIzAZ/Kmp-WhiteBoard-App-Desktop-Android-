@@ -55,12 +55,35 @@ class RoomRepoImp() : RoomRepo {
         socketManager.emitPath(jsonObj)
     }
 
+    override suspend fun erasePaths(
+        paths: List<String>,
+        roomId: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+
+        socketManager.erase(paths, roomId,onResult)
+
+    }
+
+    override fun observeErase(): Flow<List<String>> = callbackFlow {
+        socketManager.observeErase {
+            try {
+                trySend(it)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+        }
+
+        awaitClose()
+    }
+
     override fun observeIncomingPath(): Flow<DrawnPath> = callbackFlow {
-        socketManager.onDraw {
+        socketManager.observeDrawings {
             try {
                 val dto = Json.decodeFromString<DrawnPathDTO>(it)
                 val path = dto.toDrawnPath()
-                println("Data pared to DrawPath Obj")
+                println("Data parsed to DrawPath Obj")
                 trySend(path)
             } catch (e: Exception) {
                 e.printStackTrace()

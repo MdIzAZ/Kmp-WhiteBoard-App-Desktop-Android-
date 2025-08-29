@@ -4,6 +4,8 @@ import android.util.Log
 import io.socket.client.Ack
 import io.socket.client.IO
 import io.socket.client.Socket
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -19,10 +21,12 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.longOrNull
+import org.json.JSONArray
+import org.json.JSONObject
 
 actual class SocketManager actual constructor() {
 
-    //    private val socket: Socket = IO.socket("ws://localhost:8000/")
+    //        private val socket: Socket = IO.socket("ws://localhost:8000/")
     private val socket: Socket = IO.socket("wss://whiteboard-backend-vcgb.onrender.com")
 
 
@@ -45,7 +49,7 @@ actual class SocketManager actual constructor() {
 
     actual fun joinRoom(roomId: String, userId: String, onResult: (Boolean, String) -> Unit) {
         try {
-            socket.emit("join-room", roomId,userId,Ack { args ->
+            socket.emit("join-room", roomId, userId, Ack { args ->
                 if (args.isNotEmpty()) {
                     val response = args[0].toString()
                     if (response == "joined") {
@@ -87,7 +91,7 @@ actual class SocketManager actual constructor() {
     }
 
 
-    actual fun onDraw(onReceived: (String) -> Unit) {
+    actual fun observeDrawings(onReceived: (String) -> Unit) {
         try {
             socket.on("draw") {
                 Log.d("izaz", "Json Obj Received in Socket Manager")
@@ -122,6 +126,46 @@ actual class SocketManager actual constructor() {
 
     actual fun isConnected(): Boolean {
         return socket.connected()
+    }
+
+
+    actual fun erase(pathsIds: List<String>, roomId: String, onResult: (Boolean, String) -> Unit) {
+        try {
+
+            val data = JSONObject().apply {
+                put("pathsIds", JSONArray(pathsIds))
+                put("roomId", roomId)
+            }
+
+            socket.emit("erase", data)
+
+            println("Erased: $pathsIds")
+            onResult(true, "Erased")
+        } catch (e: Exception) {
+            println(e.message ?: e)
+            onResult(false, "Failed to erase")
+        }
+
+    }
+
+    actual fun observeErase(onReceived: (List<String>) -> Unit) {
+        try {
+            socket.on("erase") { args ->
+                val rawJson = args[0].toString()
+                println("Erase event received: $rawJson")
+                try {
+                    val ids = Json.decodeFromString(
+                        ListSerializer(String.serializer()),
+                        rawJson
+                    )
+                    onReceived(ids)
+                } catch (e: Exception) {
+                    println("Failed to parse erase event: ${e.message}")
+                }
+            }
+        } catch (e: Exception) {
+            println("Socket error in observeErase: ${e.message}")
+        }
     }
 
 

@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -88,13 +89,33 @@ class WhiteBoardViewModel(
             if (whiteboardId != null) { // Clicked on Already Created Shared Whiteboard, connect to room.
                 joinRoom(roomId)
                 fetchAllPathsFromServerAndSaveToDb(whiteboardId)
+            } else {
+                // room already joined after join click on dashboard Screen , Txt field
+                upsertWhiteboard {
+                    // now got a whiteboardId
+                    fetchAllPathsFromServerAndSaveToDb(updatedWhiteboardId.value!!)
+                }
             }
             observeIncomingPaths()
+            observeErase()
         } else {
             println("Mode Offline")
             _state.update { it.copy(mode = Mode.Offline) }
         }
 
+
+    }
+
+    private fun observeErase() {
+        viewModelScope.launch {
+            try {
+                roomRepo.observeErase().collect{
+                    pathRepo.deleteAListOfPaths(it)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
 
     }
 
@@ -127,7 +148,7 @@ class WhiteBoardViewModel(
                 roomRepo.observeIncomingPath().collect {
                     println("In View Model path received")
                     if (isFirstPath) {
-                        upsertWhiteboard()
+                        upsertWhiteboard() {}
                         isFirstPath = false
                     }
                     val updatedPathWithCorrectWhiteboardId =
@@ -148,7 +169,7 @@ class WhiteBoardViewModel(
             is WhiteBoardEvent.StartDrawing -> {
                 println("Is First Path? : $isFirstPath")
                 if (isFirstPath) {
-                    upsertWhiteboard()
+                    upsertWhiteboard() {}
                     println("Whiteboard Id: ${updatedWhiteboardId.value}")
                     isFirstPath = false
                 }
@@ -171,6 +192,12 @@ class WhiteBoardViewModel(
                                 Mode.Offline -> deletePaths(state.value.pathsToBeDeleted)
                                 is Mode.Online -> {
                                     deletePaths(state.value.pathsToBeDeleted)
+
+                                    val pathIds = state.value.pathsToBeDeleted
+                                        .mapNotNull{ it.pathId }
+
+                                    erasePaths(pathIds)
+
                                 }
                             }
 
@@ -229,7 +256,7 @@ class WhiteBoardViewModel(
 
             is WhiteBoardEvent.CanvasColorChange -> {
                 _state.update { it.copy(canvasColor = event.canvasColor) }
-                upsertWhiteboard()
+                upsertWhiteboard() {}
             }
 
             is WhiteBoardEvent.FillColorChange -> {
@@ -288,7 +315,7 @@ class WhiteBoardViewModel(
 
                     ColorPaletteType.CANVAS -> {
                         _state.update { it.copy(canvasColor = event.color) }
-                        upsertWhiteboard()
+                        upsertWhiteboard() {}
                     }
                 }
 
@@ -342,7 +369,7 @@ class WhiteBoardViewModel(
 
     }
 
-    private fun upsertWhiteboard() {
+    private fun upsertWhiteboard(onSuccess: () -> Unit) {
         viewModelScope.launch {
 
             val date = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -357,6 +384,7 @@ class WhiteBoardViewModel(
 
             val newId = whiteboardRepo.upsertWhiteboard(whiteboard)
             updatedWhiteboardId.value = newId
+            onSuccess()
         }
     }
 
@@ -599,5 +627,38 @@ class WhiteBoardViewModel(
         _state.update { it.copy(toastMessage = null) }
     }
 
+    fun erasePaths(pathIds: List<String>) {
+        viewModelScope.launch {
+            try {
+                roomRepo.erasePaths(pathIds, roomId!!) { isSuccess, msg->
+                    if (!isSuccess) {
+                        showToast("Failed to Erase path: $msg")
+                    }
+                }
+            } catch (e: Exception) {
+                println(e.message ?: e)
+                showToast("Failed to Erase path")
+            }
+        }
+
+    }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

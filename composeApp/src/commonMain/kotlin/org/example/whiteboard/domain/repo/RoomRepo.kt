@@ -9,10 +9,13 @@ interface RoomRepo {
 
     suspend fun emitPath(roomId: String, drawnPath: DrawnPath)
 
+    suspend fun erasePaths(paths: List<String>, roomId: String, onResult: (Boolean, String) -> Unit)
+
+    fun observeErase(): Flow<List<String>>
+
     fun observeIncomingPath(): Flow<DrawnPath>
 
     suspend fun leaveRoom(roomId: String, onResult: (Boolean) -> Unit)
-
 
 
 }

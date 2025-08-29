@@ -47,9 +47,8 @@ class RemoteDbApi(
 
         return try {
             val response = httpClient.get("${BASE_URL}/api/whiteboard/$roomId/paths")
-                .body<PathsResponse>()
             onResult(true)
-            response
+            response.body<PathsResponse>()
         } catch (e: Exception) {
             println("Error fetching paths: ${e.message}")
             onResult(false)
